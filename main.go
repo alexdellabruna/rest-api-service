@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// "/objects/{bucket}/{objectID}"
+// "/objects/{bucketID}/{objectID}"
 
 func main() {
 
@@ -24,8 +24,8 @@ func main() {
 	defer db.Close()
 
 	// create tables if they don't exist
-	db.Exec("CREATE TABLE IF NOT EXISTS buckets (id INTEGER PRIMARY KEY, name TEXT)")
-	db.Exec("CREATE TABLE IF NOT EXISTS objects (id INTEGER PRIMARY KEY, bucket_id INTEGER NOT NULL, name TEXT NOT NULL, content TEXT NOT NULL, md5_hash TEXT NOT NULL, FOREIGN KEY (bucket_id) REFERENCES buckets(id))")
+	db.Exec("CREATE TABLE IF NOT EXISTS buckets (id TEXT PRIMARY KEY)")
+	db.Exec("CREATE TABLE IF NOT EXISTS objects (id TEXT PRIMARY KEY, bucket_id TEXT NOT NULL, content TEXT NOT NULL, md5_hash TEXT NOT NULL, FOREIGN KEY (bucket_id) REFERENCES buckets(id))")
 
 	// get user-specified port from environment variable
 	httpPort := os.Getenv("HTTP_PORT")

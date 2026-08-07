@@ -7,8 +7,8 @@ type DBHandler struct {
 }
 
 type ApiRequestGetDelete struct {
-	BucketID int64 `form:"bucketID" binding:"required"`
-	ObjectID int64 `form:"objectID" binding:"required"`
+	BucketID string `uri:"bucketID" binding:"required"`
+	ObjectID string `uri:"objectID" binding:"required"`
 }
 
 type ApiRequestPut struct {
@@ -17,8 +17,8 @@ type ApiRequestPut struct {
 }
 
 type responseTemplatePutDelete struct {
-	BucketID int64  `json:"bucketID"`
-	ObjectID int64  `json:"objectID"`
+	BucketID string `json:"bucketID"`
+	ObjectID string `json:"objectID"`
 	Message  string `json:"message"`
 	Error    string `json:"error"`
 }

@@ -1,21 +1,21 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"crypto/md5"
-    "encoding/hex"
 )
 
 func computeMD5Hash(text string) string {
-   hash := md5.Sum([]byte(text))
-   return hex.EncodeToString(hash[:])
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
 }
 
 func (dbh *DBHandler) getObject(ctx *gin.Context) {
 	// validate input against schema
 	var req ApiRequestGetDelete
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, responseTemplateGet{
 			responseTemplatePutDelete: responseTemplatePutDelete{
 				Message: "Invalid request",
@@ -136,7 +136,7 @@ func (dbh *DBHandler) putObject(ctx *gin.Context) {
 
 func (dbh *DBHandler) deleteObject(ctx *gin.Context) {
 	var req ApiRequestGetDelete
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, responseTemplatePutDelete{
 			Message: "Invalid request",
 			Error:   err.Error(),
