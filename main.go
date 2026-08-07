@@ -3,14 +3,20 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
+	"sync/atomic"
+
+	"task-red-hat/handlers"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // "/objects/{bucketID}/{objectID}"
+
+var isReady atomic.Bool
 
 func main() {
 
@@ -25,9 +31,14 @@ func main() {
 
 	// create tables if they don't exist
 	db.Exec("CREATE TABLE IF NOT EXISTS buckets (id TEXT PRIMARY KEY)")
-	db.Exec("CREATE TABLE IF NOT EXISTS objects (id TEXT PRIMARY KEY, bucket_id TEXT NOT NULL, content TEXT NOT NULL, md5_hash TEXT NOT NULL, FOREIGN KEY (bucket_id) REFERENCES buckets(id))")
+	db.Exec("CREATE TABLE IF NOT EXISTS objects (id TEXT PRIMARY KEY, bucket_id TEXT NOT NULL, content TEXT NOT NULL, sha256_hash TEXT NOT NULL, FOREIGN KEY (bucket_id) REFERENCES buckets(id))")
 
-	// get user-specified port from environment variable
+	// get user-specified ip listening address from environment variable
+	ipListeningAddress := os.Getenv("IP_LISTENING_ADDRESS")
+	if ipListeningAddress == "" {
+		ipListeningAddress = "0.0.0.0"
+	}
+
 	httpPort := os.Getenv("HTTP_PORT")
 
 	if httpPort == "" {
@@ -40,13 +51,30 @@ func main() {
 		panic("HTTP_PORT must be a valid integer")
 	}
 
-	dbHandler := &DBHandler{DB: db}
+	dbHandler := &handlers.DBHandler{DB: db}
 
 	router := gin.Default()
-	router.GET("/objects/:bucketID/:objectID", dbHandler.getObject)
-	router.PUT("/objects/:bucketID/:objectID", dbHandler.putObject)
-	router.DELETE("/objects/:bucketID/:objectID", dbHandler.deleteObject)
+
+	router.GET("/healthz", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "alive"})
+	})
+
+	router.GET("/readyz", func(c *gin.Context) {
+		if !isReady.Load() {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
+			return
+		}
+
+		// if external db is used, here add a check to see if the database is reachable
+		c.JSON(http.StatusOK, gin.H{"status": "ready"})
+	})
+
+	isReady.Store(true)
+
+	router.GET("/objects/:bucket/:objectID", dbHandler.GetObject)
+	router.PUT("/objects/:bucket/:objectID", dbHandler.PutObject)
+	router.DELETE("/objects/:bucket/:objectID", dbHandler.DeleteObject)
 
 	// assuming the server is running on all interfaces
-	router.Run(":" + httpPort)
+	router.Run(ipListeningAddress + ":" + httpPort)
 }
