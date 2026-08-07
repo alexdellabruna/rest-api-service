@@ -15,14 +15,14 @@ type ApiRequestPutBody struct {
 	Content string `json:"content" binding:"required"`
 }
 
-type responseTemplatePutDelete struct {
+type ResponseTemplatePutDelete struct {
 	Bucket   string `json:"bucket"`
 	ObjectID string `json:"objectID"`
 	Message  string `json:"message"`
 	Error    string `json:"error"`
 }
 
-type responseTemplateGet struct {
-	responseTemplatePutDelete
+type ResponseTemplateGet struct {
+	ResponseTemplatePutDelete
 	Content string `json:"content"`
 }

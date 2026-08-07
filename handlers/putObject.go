@@ -21,7 +21,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 	var req ApiRequestGetPutDelete
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, responseTemplatePutDelete{
+		ctx.JSON(http.StatusBadRequest, ResponseTemplatePutDelete{
 			Message: "Invalid request",
 			Error:   err.Error(),
 		})
@@ -30,7 +30,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 
 	var reqBody ApiRequestPutBody
 	if err := ctx.ShouldBindJSON(&reqBody); err != nil {
-		ctx.JSON(http.StatusBadRequest, responseTemplatePutDelete{
+		ctx.JSON(http.StatusBadRequest, ResponseTemplatePutDelete{
 			Bucket:   req.Bucket,
 			ObjectID: req.ObjectID,
 			Message:  "Invalid request body",
@@ -48,7 +48,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 	// first of all let's check if the bucket exists
 	rowsBucketbyID, err := dbh.DB.QueryContext(ctx, "SELECT id FROM buckets WHERE id = ?", bucket)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, responseTemplatePutDelete{
+		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
 			Message:  "Failed to check bucket existence",
@@ -63,7 +63,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 	if !rowsBucketbyIDExists {
 		_, err = dbh.DB.ExecContext(ctx, "INSERT INTO buckets (id) VALUES (?)", bucket)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, responseTemplatePutDelete{
+			ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 				Bucket:   bucket,
 				ObjectID: objectID,
 				Message:  "Failed to create bucket",
@@ -77,7 +77,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 
 	rowsExistingObject, err := dbh.DB.QueryContext(ctx, "SELECT id FROM objects WHERE sha256_hash = ? AND bucket_id = ?", sha256_hash, bucket)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, responseTemplatePutDelete{
+		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
 			Message:  "Failed to check object existence",
@@ -89,7 +89,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 	rowsExistingObject.Close()
 
 	if rowsExistingObjectExists {
-		ctx.JSON(http.StatusConflict, responseTemplatePutDelete{
+		ctx.JSON(http.StatusConflict, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
 			Message:  "Object already exists",
@@ -102,7 +102,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 
 	_, err = dbh.DB.ExecContext(ctx, "INSERT INTO objects (id, bucket_id, content, sha256_hash) VALUES (?, ?, ?, ?)", objectID, bucket, content, sha256_hash)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, responseTemplatePutDelete{
+		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
 			Message:  "Failed to store object",
@@ -111,7 +111,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, responseTemplatePutDelete{
+	ctx.JSON(http.StatusCreated, ResponseTemplatePutDelete{
 		Bucket:   bucket,
 		ObjectID: objectID,
 		Message:  "Object stored successfully",

@@ -10,8 +10,8 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 	// validate input against schema
 	var req ApiRequestGetPutDelete
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, responseTemplateGet{
-			responseTemplatePutDelete: responseTemplatePutDelete{
+		ctx.JSON(http.StatusBadRequest, ResponseTemplateGet{
+			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 				Message: "Invalid request",
 				Error:   err.Error(),
 			},
@@ -24,8 +24,8 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 
 	rowsObjectContent, err := dbh.DB.QueryContext(ctx, "SELECT content FROM objects WHERE bucket_id = ? AND id = ?", bucket, objectID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, responseTemplateGet{
-			responseTemplatePutDelete: responseTemplatePutDelete{
+		ctx.JSON(http.StatusInternalServerError, ResponseTemplateGet{
+			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 				Message: "Failed to get object",
 				Error:   err.Error(),
 			},
@@ -35,8 +35,8 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 	defer rowsObjectContent.Close()
 
 	if !rowsObjectContent.Next() {
-		ctx.JSON(http.StatusNotFound, responseTemplateGet{
-			responseTemplatePutDelete: responseTemplatePutDelete{
+		ctx.JSON(http.StatusNotFound, ResponseTemplateGet{
+			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 				Bucket:   "",
 				ObjectID: "",
 				Message:  "Object not found",
@@ -49,17 +49,17 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 	var content string
 	err = rowsObjectContent.Scan(&content)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, responseTemplateGet{
-			responseTemplatePutDelete: responseTemplatePutDelete{
+		ctx.JSON(http.StatusInternalServerError, ResponseTemplateGet{
+			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 				Message: "Failed to read result",
 				Error:   err.Error(),
 			},
 		})
 		return
 	}
-	ctx.JSON(http.StatusOK, responseTemplateGet{
+	ctx.JSON(http.StatusOK, ResponseTemplateGet{
 		// first two fields are maintened for reference, the content field is the actual object content
-		responseTemplatePutDelete: responseTemplatePutDelete{
+		ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
 			Message:  "Object retrieved successfully",
