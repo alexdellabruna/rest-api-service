@@ -12,24 +12,12 @@ import (
 
 // "/objects/{bucket}/{objectID}"
 
-type DBHandler struct {
-	DB *sql.DB
-}
-
-type ApiRequestGetDelete struct {
-	BucketID int64 `form:"bucketID" binding:"required"`
-	ObjectID int64 `form:"objectID" binding:"required"`
-}
-
-type ApiRequestPut struct {
-	ApiRequestGetDelete
-	Content string `form:"content" binding:"required"`
-}
-
 func main() {
 
 	// using SQLite for local storage
-	db, err := sql.Open("sqlite3", "./local.db")
+	// ignore if the directory already exists
+	os.MkdirAll("./db_data", os.ModePerm)
+	db, err := sql.Open("sqlite3", "./db_data/local.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +25,7 @@ func main() {
 
 	// create tables if they don't exist
 	db.Exec("CREATE TABLE IF NOT EXISTS buckets (id INTEGER PRIMARY KEY, name TEXT)")
-	db.Exec("CREATE TABLE IF NOT EXISTS objects (id INTEGER PRIMARY KEY, bucket_id INTEGER NOT NULL, name TEXT NOT NULL, content TEXT NOT NULL, FOREIGN KEY (bucket_id) REFERENCES buckets(id))")
+	db.Exec("CREATE TABLE IF NOT EXISTS objects (id INTEGER PRIMARY KEY, bucket_id INTEGER NOT NULL, name TEXT NOT NULL, content TEXT NOT NULL, md5_hash TEXT NOT NULL, FOREIGN KEY (bucket_id) REFERENCES buckets(id))")
 
 	// get user-specified port from environment variable
 	httpPort := os.Getenv("HTTP_PORT")

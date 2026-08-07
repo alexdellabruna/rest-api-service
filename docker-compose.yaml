@@ -5,18 +5,11 @@ services:
     image: .
     working_dir: /app
     volumes:
-      - sqlite_data:/app/sqlite_data
+      - sqlite_data:/app/db_data
     ports:
       - "8080:8080"
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: appdb
-      DB_USER: postgres
-      DB_PASSWORD: postgres
       HTTP_PORT: 8080
-    depends_on:
-      - db
 
 volumes:
   sqlite_data:

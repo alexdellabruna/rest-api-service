@@ -3,18 +3,13 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"crypto/md5"
+    "encoding/hex"
 )
 
-type responseTemplatePutDelete struct {
-	BucketID int64  `json:"bucketID"`
-	ObjectID int64  `json:"objectID"`
-	Message  string `json:"message"`
-	Error    string `json:"error"`
-}
-
-type responseTemplateGet struct {
-	responseTemplatePutDelete
-	Content string `json:"content"`
+func computeMD5Hash(text string) string {
+   hash := md5.Sum([]byte(text))
+   return hex.EncodeToString(hash[:])
 }
 
 func (dbh *DBHandler) getObject(ctx *gin.Context) {
@@ -106,7 +101,9 @@ func (dbh *DBHandler) putObject(ctx *gin.Context) {
 	objectID := req.ObjectID
 	content := req.Content
 
-	stmt, err := dbh.DB.PrepareContext(ctx, "INSERT OR REPLACE INTO objects (id, bucket_id, name, content) VALUES (?, ?, ?, ?)")
+	md5_hash := computeMD5Hash(content)
+
+	stmt, err := dbh.DB.PrepareContext(ctx, "INSERT OR REPLACE INTO objects (id, bucket_id, name, content, hash) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, responseTemplatePutDelete{
 			BucketID: bucketID,
@@ -118,7 +115,7 @@ func (dbh *DBHandler) putObject(ctx *gin.Context) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, objectID, bucketID, objectID, content)
+	_, err = stmt.ExecContext(ctx, objectID, bucketID, objectID, content, md5_hash)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, responseTemplatePutDelete{
 			BucketID: bucketID,
