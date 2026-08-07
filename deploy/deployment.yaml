@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rest-api-deployment
+  labels:
+    app: rest-api
+spec:
+  replicas: 3 # enable HA
+  selector:
+    matchLabels:
+      app: rest-api
+  template:
+    metadata:
+      labels:
+        app: rest-api
+    spec:
+      # Enable run on Openshift
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: rest-api
+          image: ghcr...
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: rest-api-volume
+              mountPath: /app/db_data
+          ports:
+            - containerPort: 8080
+      volumes:
+        - name: rest-api-volume
+          persistentVolumeClaim:
+            claimName: rest-api-pvc
