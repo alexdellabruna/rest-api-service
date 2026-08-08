@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"os"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 )
 
 func dbConnectAndInit(t *testing.T) *sql.DB {
@@ -24,4 +26,37 @@ func dbConnectAndInit(t *testing.T) *sql.DB {
 	}
 
 	return db
+}
+
+func seedTestBucketData(t *testing.T, db *sql.DB, ctx *gin.Context, bucket string) {
+	t.Helper()
+	_, err := db.ExecContext(ctx, "INSERT INTO buckets (id) VALUES (?)", bucket)
+	if err != nil {
+		t.Errorf("Failed to seed test data: %v", err)
+	}
+}
+
+func seedTestObjectData(t *testing.T, db *sql.DB, ctx *gin.Context, bucket string, objectID string) {
+	t.Helper()
+	_, err := db.ExecContext(ctx, "INSERT INTO objects (id, bucket_id, content, sha256_hash) VALUES (?, ?, ?, ?)", objectID, bucket, "This is a test object content.", "abcd1234efgh5678ijkl9012mnop3456qrst7890uvwx1234yzab5678cdef9012")
+
+	if err != nil {
+		t.Errorf("Failed to seed test data: %v", err)
+	}
+}
+
+func cleanupTestBucketData(t *testing.T, db *sql.DB, ctx *gin.Context, bucket string) {
+	t.Helper()
+	_, err := db.ExecContext(ctx, "DELETE FROM buckets WHERE id = ?", bucket)
+	if err != nil {
+		t.Errorf("Failed to clean up test data: %v", err)
+	}
+}
+
+func cleanupTestObjectData(t *testing.T, db *sql.DB, ctx *gin.Context, bucket string, objectID string) {
+	t.Helper()
+	_, err := db.ExecContext(ctx, "DELETE FROM objects WHERE id = ? AND bucket_id = ?", objectID, bucket)
+	if err != nil {
+		t.Errorf("Failed to clean up test data: %v", err)
+	}
 }

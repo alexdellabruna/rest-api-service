@@ -1,0 +1,139 @@
+package tests
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"task-red-hat/handlers"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/go-cmp/cmp"
+	_ "github.com/mattn/go-sqlite3"
+)
+
+func TestGetObject(t *testing.T) {
+
+	testCases := []struct {
+		name                  string
+		bucket                string
+		objectID              string
+		content               string
+		needBucketDataSeeding bool
+		needObjectDataSeeding bool
+		expectedResponseCode  int
+		expectedResponseBody  handlers.ResponseTemplateGet
+	}{
+		{
+			name:                  "Get existing object in existing bucket",
+			bucket:                "test-bucket",
+			objectID:              "verylongID",
+			content:               "This is a test object content.",
+			needBucketDataSeeding: true,
+			needObjectDataSeeding: true,
+			expectedResponseCode:  http.StatusOK,
+			expectedResponseBody: handlers.ResponseTemplateGet{
+				ResponseTemplatePutDelete: handlers.ResponseTemplatePutDelete{
+					Bucket:   "test-bucket",
+					ObjectID: "verylongID",
+					Message:  "Object retrieved successfully",
+					Error:    "",
+				},
+				Content: "This is a test object content.",
+			},
+		},
+		{
+			name:                  "Get non-existing object in existing bucket",
+			bucket:                "existing-bucket",
+			objectID:              "nonexistent-object",
+			content:               "",
+			needBucketDataSeeding: true,
+			needObjectDataSeeding: false,
+			expectedResponseCode:  http.StatusNotFound,
+			expectedResponseBody: handlers.ResponseTemplateGet{
+				ResponseTemplatePutDelete: handlers.ResponseTemplatePutDelete{
+					Bucket:   "existing-bucket",
+					ObjectID: "nonexistent-object",
+					Message:  "Object not found",
+					Error:    "Not found",
+				},
+				Content: "",
+			},
+		},
+		{
+			name:                  "Get non-existing object in non-existing bucket",
+			bucket:                "non-existing-bucket",
+			objectID:              "verylongID",
+			content:               "",
+			needBucketDataSeeding: false,
+			needObjectDataSeeding: false,
+			expectedResponseCode:  http.StatusNotFound,
+			expectedResponseBody: handlers.ResponseTemplateGet{
+				ResponseTemplatePutDelete: handlers.ResponseTemplatePutDelete{
+					Bucket:   "non-existing-bucket",
+					ObjectID: "verylongID",
+					Message:  "Object not found",
+					Error:    "Not found",
+				},
+				Content: "",
+			},
+		},
+	}
+
+	db := dbConnectAndInit(t)
+	defer db.Close()
+
+	dbHandler := &handlers.DBHandler{DB: db}
+
+	gin.SetMode(gin.TestMode)
+
+	for _, tc := range testCases {
+
+		t.Run(tc.name, func(t *testing.T) {
+
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
+
+			if tc.needBucketDataSeeding {
+				seedTestBucketData(t, db, ctx, tc.bucket)
+			}
+
+			if tc.needObjectDataSeeding {
+				seedTestObjectData(t, db, ctx, tc.bucket, tc.objectID)
+			}
+
+			t.Cleanup(func() {
+				if tc.needObjectDataSeeding {
+					cleanupTestObjectData(t, db, ctx, tc.bucket, tc.objectID)
+				}
+
+				if tc.needBucketDataSeeding {
+					cleanupTestBucketData(t, db, ctx, tc.bucket)
+				}
+			})
+
+			// Now test the GET request
+			ctx.Request = httptest.NewRequest("GET", "/objects/"+tc.bucket+"/"+tc.objectID, nil)
+
+			ctx.Params = gin.Params{
+				{Key: "bucket", Value: tc.bucket},
+				{Key: "objectID", Value: tc.objectID},
+			}
+
+			dbHandler.GetObject(ctx)
+
+			if w.Code != tc.expectedResponseCode {
+				t.Errorf("Expected status code %d, got %d", tc.expectedResponseCode, w.Code)
+			}
+
+			var actualResponse handlers.ResponseTemplateGet
+			if err := json.Unmarshal(w.Body.Bytes(), &actualResponse); err != nil {
+				t.Fatalf("Failed to parse JSON response: %v", err)
+			}
+
+			if diff := cmp.Diff(tc.expectedResponseBody, actualResponse); diff != "" {
+				t.Errorf("GetObject() mismatch (-expected +actual):\n%s", diff)
+			}
+		})
+	}
+}

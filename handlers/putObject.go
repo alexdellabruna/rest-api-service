@@ -75,7 +75,7 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 
 	// check if the object already exists
 
-	rowsExistingObject, err := dbh.DB.QueryContext(ctx, "SELECT id FROM objects WHERE sha256_hash = ? AND bucket_id = ?", sha256_hash, bucket)
+	rowsExistingObject, err := dbh.DB.QueryContext(ctx, "SELECT id FROM objects WHERE (id = ? OR sha256_hash = ?) AND bucket_id = ?", objectID, sha256_hash, bucket)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
@@ -92,8 +92,8 @@ func (dbh *DBHandler) PutObject(ctx *gin.Context) {
 		ctx.JSON(http.StatusConflict, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
-			Message:  "Object already exists",
-			Error:    "",
+			Message:  "An object with the same content already exists in the bucket",
+			Error:    "Object already exists",
 		})
 		return
 	}
