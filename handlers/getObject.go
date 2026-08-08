@@ -12,9 +12,12 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, ResponseTemplateGet{
 			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
-				Message: "Invalid request",
-				Error:   err.Error(),
+				Bucket:   req.Bucket,
+				ObjectID: req.ObjectID,
+				Message:  "Invalid request",
+				Error:    err.Error(),
 			},
+			Content: "",
 		})
 		return
 	}
@@ -26,9 +29,12 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplateGet{
 			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
-				Message: "Failed to get object",
-				Error:   err.Error(),
+				Bucket:   bucket,
+				ObjectID: objectID,
+				Message:  "Failed to get object",
+				Error:    err.Error(),
 			},
+			Content: "",
 		})
 		return
 	}
@@ -37,11 +43,12 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 	if !rowsObjectContent.Next() {
 		ctx.JSON(http.StatusNotFound, ResponseTemplateGet{
 			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
-				Bucket:   "",
-				ObjectID: "",
+				Bucket:   bucket,
+				ObjectID: objectID,
 				Message:  "Object not found",
 				Error:    "Not found",
 			},
+			Content: "",
 		})
 		return
 	}
@@ -51,9 +58,12 @@ func (dbh *DBHandler) GetObject(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplateGet{
 			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
-				Message: "Failed to read result",
-				Error:   err.Error(),
+				Bucket:   bucket,
+				ObjectID: objectID,
+				Message:  "Failed to read result",
+				Error:    err.Error(),
 			},
+			Content: "",
 		})
 		return
 	}

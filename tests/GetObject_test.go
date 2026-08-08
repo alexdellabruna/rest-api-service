@@ -3,9 +3,7 @@ package tests
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http/httptest"
-	"strings"
 	"task-red-hat/handlers"
 	"testing"
 
@@ -14,69 +12,121 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestGetObjectSuccess(t *testing.T) {
-	db, err := sql.Open("sqlite3", "../db_data/local.db")
+func seedTestData(t *testing.T, db *sql.DB, ctx *gin.Context, bucket string, objectID string) {
+	_, err := db.ExecContext(ctx, "INSERT INTO buckets (id) VALUES (?)", bucket)
 	if err != nil {
-		log.Fatal(err)
+		t.Errorf("Failed to seed test data: %v", err)
 	}
+
+	_, err = db.ExecContext(ctx, "INSERT INTO objects (id, bucket_id, content, sha256_hash) VALUES (?, ?, ?, ?)", objectID, bucket, "This is a test object content.", "abcd1234efgh5678ijkl9012mnop3456qrst7890uvwx1234yzab5678cdef9012")
+
+	if err != nil {
+		t.Errorf("Failed to seed test data: %v", err)
+	}
+}
+
+func cleanupTestData(t *testing.T, db *sql.DB, ctx *gin.Context, bucket string, objectID string) {
+	_, err := db.ExecContext(ctx, "DELETE FROM objects WHERE id = ? AND bucket_id = ?", objectID, bucket)
+	if err != nil {
+		t.Errorf("Failed to clean up test data: %v", err)
+	}
+
+	_, err = db.ExecContext(ctx, "DELETE FROM buckets WHERE id = ?", bucket)
+	if err != nil {
+		t.Errorf("Failed to clean up test data: %v", err)
+	}
+}
+
+func TestGetObject(t *testing.T) {
+
+	testCases := []struct {
+		name                 string
+		bucket               string
+		objectID             string
+		content              string
+		needDataSeeding      bool
+		expectedResponseCode int
+		expectedResponseBody handlers.ResponseTemplateGet
+	}{
+		{
+			name:                 "Get existing object",
+			bucket:               "test-bucket",
+			objectID:             "verylongID",
+			content:              "This is a test object content.",
+			needDataSeeding:      true,
+			expectedResponseCode: 200,
+			expectedResponseBody: handlers.ResponseTemplateGet{
+				ResponseTemplatePutDelete: handlers.ResponseTemplatePutDelete{
+					Bucket:   "test-bucket",
+					ObjectID: "verylongID",
+					Message:  "Object retrieved successfully",
+					Error:    "",
+				},
+				Content: "This is a test object content.",
+			},
+		},
+		{
+			name:                 "Get non-existing object",
+			bucket:               "nonexistent-bucket",
+			objectID:             "nonexistent-object",
+			content:              "",
+			needDataSeeding:      false,
+			expectedResponseCode: 404,
+			expectedResponseBody: handlers.ResponseTemplateGet{
+				ResponseTemplatePutDelete: handlers.ResponseTemplatePutDelete{
+					Bucket:   "nonexistent-bucket",
+					ObjectID: "nonexistent-object",
+					Message:  "Object not found",
+					Error:    "Not found",
+				},
+				Content: "",
+			},
+		},
+	}
+
+	db := dbConnectAndInit(t)
 	defer db.Close()
 
 	dbHandler := &handlers.DBHandler{DB: db}
 
 	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(w)
 
-	bucket := "test-bucket"
-	objectID := "verylongID"
+	for _, tc := range testCases {
 
-	ctx.Request = httptest.NewRequest("PUT", "/objects/"+bucket+"/"+objectID, strings.NewReader("{\"content\": \"This is a test object content.\"}"))
+		t.Run(tc.name, func(t *testing.T) {
 
-	ctx.Params = gin.Params{
-		{Key: "bucket", Value: bucket},
-		{Key: "objectID", Value: objectID},
-	}
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
 
-	dbHandler.PutObject(ctx)
+			if tc.needDataSeeding {
+				seedTestData(t, db, ctx, tc.bucket, tc.objectID)
+				t.Cleanup(func() {
+					cleanupTestData(t, db, ctx, tc.bucket, tc.objectID)
+				})
+			}
 
-	if w.Code != 201 {
-		t.Errorf("Expected status code 201, got %d", w.Code)
-	}
+			// Now test the GET request success case
+			ctx.Request = httptest.NewRequest("GET", "/objects/"+tc.bucket+"/"+tc.objectID, nil)
 
-	// Now test the GET request
-	w = httptest.NewRecorder()
-	ctx, _ = gin.CreateTestContext(w)
+			ctx.Params = gin.Params{
+				{Key: "bucket", Value: tc.bucket},
+				{Key: "objectID", Value: tc.objectID},
+			}
 
-	ctx.Request = httptest.NewRequest("GET", "/objects/"+bucket+"/"+objectID, nil)
+			dbHandler.GetObject(ctx)
 
-	ctx.Params = gin.Params{
-		{Key: "bucket", Value: bucket},
-		{Key: "objectID", Value: objectID},
-	}
+			if w.Code != tc.expectedResponseCode {
+				t.Errorf("Expected status code %d, got %d", tc.expectedResponseCode, w.Code)
+			}
 
-	dbHandler.GetObject(ctx)
+			var actualResponse handlers.ResponseTemplateGet
+			if err := json.Unmarshal(w.Body.Bytes(), &actualResponse); err != nil {
+				t.Fatalf("Failed to parse JSON response: %v", err)
+			}
 
-	if w.Code != 200 {
-		t.Errorf("Expected status code 200, got %d", w.Code)
-	}
-
-	expectedResponse := handlers.ResponseTemplateGet{
-		// first two fields are maintened for reference, the content field is the actual object content
-		ResponseTemplatePutDelete: handlers.ResponseTemplatePutDelete{
-			Bucket:   bucket,
-			ObjectID: objectID,
-			Message:  "Object retrieved successfully",
-			Error:    "",
-		},
-		Content: "This is a test object content.",
-	}
-
-	var actualResponse handlers.ResponseTemplateGet
-	if err := json.Unmarshal(w.Body.Bytes(), &actualResponse); err != nil {
-		t.Fatalf("Failed to parse JSON response: %v", err)
-	}
-
-	if diff := cmp.Diff(expectedResponse, actualResponse); diff != "" {
-		t.Errorf("GetObject() mismatch (-expected +actual):\n%s", diff)
+			if diff := cmp.Diff(tc.expectedResponseBody, actualResponse); diff != "" {
+				t.Errorf("GetObject() mismatch (-expected +actual):\n%s", diff)
+			}
+		})
 	}
 }
