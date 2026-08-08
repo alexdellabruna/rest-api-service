@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"task-red-hat/handlers"
+	"task-red-hat/internal/handlers"
 	"testing"
 
 	"github.com/gin-gonic/gin"

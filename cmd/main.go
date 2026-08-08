@@ -3,12 +3,12 @@ package main
 import (
 	"database/sql"
 	"log"
-	"net/http"
 	"os"
 	"strconv"
 	"sync/atomic"
 
-	"task-red-hat/handlers"
+	"task-red-hat/internal/handlers"
+	"task-red-hat/internal/routes"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -22,8 +22,8 @@ func main() {
 
 	// using SQLite for local storage
 	// ignore if the directory already exists
-	os.MkdirAll("./db_data", os.ModePerm)
-	db, err := sql.Open("sqlite3", "./db_data/local.db")
+	os.MkdirAll("../db_data", os.ModePerm)
+	db, err := sql.Open("sqlite3", "../db_data/local.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,25 +55,7 @@ func main() {
 
 	router := gin.Default()
 
-	router.GET("/healthz", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "alive"})
-	})
-
-	router.GET("/readyz", func(c *gin.Context) {
-		if !isReady.Load() {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
-			return
-		}
-
-		// if external db is used, here add a check to see if the database is reachable
-		c.JSON(http.StatusOK, gin.H{"status": "ready"})
-	})
-
-	isReady.Store(true)
-
-	router.GET("/objects/:bucket/:objectID", dbHandler.GetObject)
-	router.PUT("/objects/:bucket/:objectID", dbHandler.PutObject)
-	router.DELETE("/objects/:bucket/:objectID", dbHandler.DeleteObject)
+	routes.RegisterRoutes(router, dbHandler, &isReady)
 
 	// assuming the server is running on all interfaces
 	router.Run(ipListeningAddress + ":" + httpPort)

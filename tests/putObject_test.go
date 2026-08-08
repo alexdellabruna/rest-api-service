@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"task-red-hat/handlers"
+	"task-red-hat/internal/handlers"
 	"testing"
 
 	"github.com/gin-gonic/gin"
