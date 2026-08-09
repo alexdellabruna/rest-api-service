@@ -44,6 +44,13 @@ spec:
           volumeMounts:
             - name: rest-api-volume
               mountPath: /app/db_data
+          env:
+            - name: HTTP_PORT
+              value: "8080"
+            - name: LISTENING_ADDRESS
+              value: "[::]"
+            - name: GIN_MODE
+              value: "release"
           ports:
             - containerPort: 8080
       volumes:

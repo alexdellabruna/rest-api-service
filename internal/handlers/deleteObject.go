@@ -4,11 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 func (gh *GenericHTTPHandler) DeleteObject(ctx *gin.Context) {
 	var req ApiRequestGetPutDelete
 	if err := ctx.ShouldBindUri(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to bind URI parameters")
 		ctx.JSON(http.StatusBadRequest, ResponseTemplatePutDelete{
 			Message: "Invalid request",
 		})
@@ -21,6 +23,7 @@ func (gh *GenericHTTPHandler) DeleteObject(ctx *gin.Context) {
 	rowsAffected, err := gh.DBHandler.DeleteObjectByID(ctx, bucket, objectID)
 
 	if rowsAffected == 0 {
+		log.Warn().Msgf("Object with ID %s in bucket %s not found", objectID, bucket)
 		ctx.JSON(http.StatusNotFound, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
@@ -30,6 +33,7 @@ func (gh *GenericHTTPHandler) DeleteObject(ctx *gin.Context) {
 	}
 
 	if err != nil {
+		log.Error().Err(err).Msgf("Failed to delete object with ID %s in bucket %s", objectID, bucket)
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
@@ -38,6 +42,7 @@ func (gh *GenericHTTPHandler) DeleteObject(ctx *gin.Context) {
 		return
 	}
 
+	log.Info().Msgf("Successfully deleted object with ID %s in bucket %s", objectID, bucket)
 	ctx.JSON(http.StatusOK, ResponseTemplatePutDelete{
 		Bucket:   bucket,
 		ObjectID: objectID,

@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"net/http"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,6 +24,7 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 	var req ApiRequestGetPutDelete
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to bind URI parameters")
 		ctx.JSON(http.StatusBadRequest, ResponseTemplatePutDelete{
 			Bucket:   req.Bucket,
 			ObjectID: req.ObjectID,
@@ -32,6 +35,7 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 
 	var reqBody ApiRequestPutBody
 	if err := ctx.ShouldBindJSON(&reqBody); err != nil {
+		log.Error().Err(err).Msg("Failed to bind request body")
 		ctx.JSON(http.StatusBadRequest, ResponseTemplatePutDelete{
 			Bucket:   req.Bucket,
 			ObjectID: req.ObjectID,
@@ -47,9 +51,11 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 	sha256_hash := computeSHA256Hash(content)
 
 	// first of all let's check if the bucket exists
+	log.Debug().Msgf("Checking if bucket %s exists...", bucket)
 	bucketObj, err := gh.DBHandler.GetBucketByID(ctx, bucket)
 
 	if err != nil && err != sql.ErrNoRows {
+		log.Error().Err(err).Msgf("Failed to check bucket existence for bucket %s", bucket)
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
@@ -60,9 +66,11 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 
 	// if the bucket does not exist, create it
 	if bucketObj == nil {
+		log.Info().Msgf("Bucket %s does not exist. Creating it...", bucket)
 		err = gh.DBHandler.InsertBucket(ctx, bucket)
 
 		if err != nil {
+			log.Error().Err(err).Msgf("Failed to create bucket %s", bucket)
 			ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 				Bucket:   bucket,
 				ObjectID: objectID,
@@ -73,10 +81,11 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 	}
 
 	// check if the object already exists
-
+	log.Debug().Msgf("Checking if object with ID %s in bucket %s already exists...", objectID, bucket)
 	objectExists, err := gh.DBHandler.CheckObjectExistance(ctx, bucket, objectID, sha256_hash)
 
 	if err != nil {
+		log.Error().Err(err).Msgf("Failed to check object existence for bucket %s and object ID %s", bucket, objectID)
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
@@ -86,6 +95,7 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 	}
 
 	if objectExists {
+		log.Warn().Msgf("Object with ID %s in bucket %s already exists", objectID, bucket)
 		ctx.JSON(http.StatusConflict, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
@@ -99,6 +109,7 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 	err = gh.DBHandler.InsertObject(ctx, objectID, bucket, content, sha256_hash)
 
 	if err != nil {
+		log.Error().Err(err).Msgf("Failed to store object with ID %s in bucket %s", objectID, bucket)
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplatePutDelete{
 			Bucket:   bucket,
 			ObjectID: objectID,
@@ -107,6 +118,7 @@ func (gh *GenericHTTPHandler) PutObject(ctx *gin.Context) {
 		return
 	}
 
+	log.Info().Msgf("Successfully stored object with ID %s in bucket %s", objectID, bucket)
 	ctx.JSON(http.StatusCreated, ResponseTemplatePutDelete{
 		Bucket:   bucket,
 		ObjectID: objectID,

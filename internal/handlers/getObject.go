@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"net/http"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,6 +13,7 @@ func (gh *GenericHTTPHandler) GetObject(ctx *gin.Context) {
 	// validate input against schema
 	var req ApiRequestGetPutDelete
 	if err := ctx.ShouldBindUri(&req); err != nil {
+		log.Error().Err(err).Msg("Failed to bind URI parameters")
 		ctx.JSON(http.StatusBadRequest, ResponseTemplateGet{
 			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 				Bucket:   req.Bucket,
@@ -29,6 +32,7 @@ func (gh *GenericHTTPHandler) GetObject(ctx *gin.Context) {
 	if err != nil {
 
 		if err == sql.ErrNoRows {
+			log.Warn().Msgf("Object with ID %s in bucket %s not found", objectID, bucket)
 			ctx.JSON(http.StatusNotFound, ResponseTemplateGet{
 				ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 					Bucket:   bucket,
@@ -40,6 +44,7 @@ func (gh *GenericHTTPHandler) GetObject(ctx *gin.Context) {
 			return
 		}
 
+		log.Error().Err(err).Msgf("Failed to get object with ID %s in bucket %s", objectID, bucket)
 		ctx.JSON(http.StatusInternalServerError, ResponseTemplateGet{
 			ResponseTemplatePutDelete: ResponseTemplatePutDelete{
 				Bucket:   bucket,
@@ -51,6 +56,7 @@ func (gh *GenericHTTPHandler) GetObject(ctx *gin.Context) {
 		return
 	}
 
+	log.Info().Msgf("Successfully retrieved object with ID %s in bucket %s", objectID, bucket)
 	ctx.JSON(http.StatusOK, ResponseTemplateGet{
 		// first two fields are maintened for reference, the content field is the actual object content
 		ResponseTemplatePutDelete: ResponseTemplatePutDelete{

@@ -20,7 +20,7 @@ run:
 	$(GO) run ./cmd
 
 run-docker:
-	docker run -p $(LOCAL_PORT):$(PORT) -e LISTENING_ADDRESS=$(LISTENING_ADDRESS) -e HTTP_PORT=$(PORT) $(APP_NAME)
+	docker run -p $(LOCAL_PORT):$(PORT) -e LISTENING_ADDRESS=$(LISTENING_ADDRESS) -e HTTP_PORT=$(PORT) $(APP_NAME) -e GIN_MODE=release
 
 test:
 	$(GO) test -v ./...
