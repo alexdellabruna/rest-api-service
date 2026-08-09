@@ -39,5 +39,5 @@ To deploy to production, apply the Kubernetes manifests in the `deploy` director
 
 
 ## AI Use
-During development, AI assistance was used exclusively for code boilerplating via GitHub Copilot.
+During development, AI assistance was used exclusively to generate code boilerplate via GitHub Copilot.
 All generated boilerplate was manually reviewed, validated, and refined before integration.
