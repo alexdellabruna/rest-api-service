@@ -31,6 +31,7 @@ To deploy to production, apply the Kubernetes manifests in the `deploy` director
 - Migrate to an external PostgreSQL instance as the primary datastore
 - Introduce stateless authentication (e.g. JWT) and application security controls (e.g. CORS, CSP, etc.)
 - Introduce a caching layer (e.g. Redis)
+- Kustomize or add Helm Chart for Kubernetes deployment
 - Add a `/metrics` endpoint
 - Add Swagger and OpenAPI documentation
 - Add linting and hot reloading (for development purposes)
