@@ -10,8 +10,49 @@ The application was implemented according to the provided specifications. The ma
 
 ## Endpoints
 - GET `/objects/{bucket}/{objectID}`: retrieve an object by bucket ID and object ID
-- PUT `/objects/{bucket}/{objectID}`: create an object in the specified bucket using the provided object ID
+- PUT `/objects/{bucket}/{objectID}`: create an object in the specified bucket using the provided object ID, needs also `content` to be passed in the request JSON body
 - DELETE `/objects/{bucket}/{objectID}`: delete an object by bucket ID and object ID
+
+## Examples
+- PUT `/objects/test-bucket/test-id`
+Body:
+```json
+{
+    "content":"some-content"
+}
+```
+
+Response:
+```json
+{
+    "bucket": "test-bucket",
+    "objectID": "test-id",
+    "message": "Object stored successfully"
+}
+```
+
+- GET `/objects/test-bucket/test-id`
+
+Response:
+```json
+{
+    "bucket": "test-bucket",
+    "objectID": "test-id",
+    "message": "Object retrieved successfully",
+    "content": "some-content"
+}
+```
+
+- DELETE `/objects/test-bucket/test-id`
+
+Response:
+```json
+{
+    "bucket": "test-bucket",
+    "objectID": "test-id",
+    "message": "Object deleted successfully"
+}
+```
 
 ## Environment variables
 - `LISTENING_ADDRESS`: IP address or hostname on which the web server listens, defaults to `0.0.0.0`
