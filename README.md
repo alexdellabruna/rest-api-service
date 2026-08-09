@@ -16,6 +16,7 @@ The application was implemented according to the provided specifications. The ma
 ## Environment variables
 - `LISTENING_ADDRESS`: IP address or hostname on which the web server listens, defaults to `0.0.0.0`
 - `HTTP_PORT`: TCP port on which the web server listens, defaults to `8080`
+- `GIN_MODE`: configures wheter app should run in debug or production mode, defaults to `release`
 
 ## Run tests
 To run the integration test suite, execute `make test`.
@@ -27,7 +28,8 @@ To deploy to production, apply the Kubernetes manifests in the `deploy` director
 
 ## Production Notes
 - Migrate to an external PostgreSQL instance as the primary datastore
-- Add a cache layer (e.g. Redis)
+- Introduce stateless authentication (e.g. JWT) and application security controls (e.g. CORS, CSP, etc.)
+- Introduce a caching layer (e.g. Redis)
 - Add a `/metrics` endpoint
 - Add Swagger and OpenAPI documentation
 - Add linting and hot reloading (for development purposes)
