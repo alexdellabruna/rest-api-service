@@ -5,7 +5,7 @@ metadata:
   labels:
     app: rest-api
 spec:
-  replicas: 3 # enable HA
+  replicas: 1
   selector:
     matchLabels:
       app: rest-api

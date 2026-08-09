@@ -27,6 +27,7 @@ To deploy locally, run `make all` or `make all-docker`.
 To deploy to production, apply the Kubernetes manifests in the `deploy` directory.
 
 ## Production Notes
+- Enable HA
 - Migrate to an external PostgreSQL instance as the primary datastore
 - Introduce stateless authentication (e.g. JWT) and application security controls (e.g. CORS, CSP, etc.)
 - Introduce a caching layer (e.g. Redis)
