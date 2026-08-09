@@ -7,6 +7,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// DELETE /objects/{bucket}/{objectID}
+
 func (gh *GenericHTTPHandler) DeleteObject(ctx *gin.Context) {
 	var req ApiRequestGetPutDelete
 	if err := ctx.ShouldBindUri(&req); err != nil {

@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GET /objects/{bucket}/{objectID}
+
 func (gh *GenericHTTPHandler) GetObject(ctx *gin.Context) {
 	// validate input against schema
 	var req ApiRequestGetPutDelete
