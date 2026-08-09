@@ -17,9 +17,6 @@ spec:
       # Enables run on Openshift
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
       containers:
         - name: rest-api
           image: ghcr.io/alexdellabruna/rest-api-service:latest
