@@ -6,6 +6,7 @@ The application was implemented according to the provided specifications. The ma
 - Storage: SQLite, selected for its simplicity and performance
 - Web server: Gin, selected for its lightweight HTTP routing and middleware support
 - Logging: Zerolog, selected for its low overhead and efficient structured logging (useful for log analisys tools like Datadog)
+- Bucket object deduplication: SHA-256, selected for its good balance of computational efficiency and collision resistance
 
 ## Endpoints
 - GET `/objects/{bucket}/{objectID}`: retrieve an object by bucket ID and object ID
@@ -29,8 +30,14 @@ To deploy to production, apply the Kubernetes manifests in the `deploy` director
 - Add a cache layer (e.g. Redis)
 - Add a `/metrics` endpoint
 - Add Swagger and OpenAPI documentation
+- Add linting and hot reloading (for development purposes)
 - Move to a fully RESTful resource structure `/buckets/{bucketID}/objects/{objectID}`:
     - GET object on the `/buckets/{bucketID}/objects/{objectID}` endpoint
     - POST new objects on the `/buckets/{bucketID}/objects` endpoint (the object ID must be assigned by the backend)
     - PUT existing objects (override) on the `/buckets/{bucketID}/objects/{objectID}` (or just use PATCH)
     - DELETE object on the `/buckets/{bucketID}/objects/{objectID}` endpoint
+
+
+## AI Use
+During development, AI assistance was used exclusively for code boilerplating via GitHub Copilot.
+All generated boilerplate was manually reviewed, validated, and refined before integration.

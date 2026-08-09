@@ -7,8 +7,8 @@ LISTENING_ADDRESS ?= [::]
 
 .PHONY: all build run test clean fmt vet tidy
 
-all: tidy test run
-all-docker: tidy test build-docker run-docker
+all: tidy vet fmt test run
+all-docker: tidy vet fmt test build-docker run-docker
 
 build:
 	$(GO) build -o bin/$(APP_NAME) ./...
