@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"task-red-hat/internal/handlers"
+	"task-red-hat/internal/storage"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,6 @@ func TestPutObject(t *testing.T) {
 				Bucket:   "test-bucket",
 				ObjectID: "verylongID",
 				Message:  "Object stored successfully",
-				Error:    "",
 			},
 		},
 		{
@@ -52,7 +52,6 @@ func TestPutObject(t *testing.T) {
 				Bucket:   "test-bucket",
 				ObjectID: "verylongID",
 				Message:  "Object stored successfully",
-				Error:    "",
 			},
 		},
 		{
@@ -67,7 +66,6 @@ func TestPutObject(t *testing.T) {
 				Bucket:   "test-bucket",
 				ObjectID: "verylongID",
 				Message:  "An object with the same content already exists in the bucket",
-				Error:    "Object already exists",
 			},
 		},
 	}
@@ -75,7 +73,7 @@ func TestPutObject(t *testing.T) {
 	db := dbConnectAndInit(t)
 	defer db.Close()
 
-	dbHandler := &handlers.DBHandler{DB: db}
+	genericHTTPHandler := &handlers.GenericHTTPHandler{DBHandler: &storage.DBHandler{DB: db}}
 
 	gin.SetMode(gin.TestMode)
 
@@ -108,7 +106,7 @@ func TestPutObject(t *testing.T) {
 				{Key: "objectID", Value: tc.objectID},
 			}
 
-			dbHandler.PutObject(ctx)
+			genericHTTPHandler.PutObject(ctx)
 
 			if w.Code != tc.expectedResponseCode {
 				t.Errorf("Expected status code %d, got %d", tc.expectedResponseCode, w.Code)

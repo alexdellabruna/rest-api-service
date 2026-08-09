@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(router *gin.Engine, dbHandler *handlers.DBHandler, isReady *atomic.Bool) {
+func RegisterRoutes(router *gin.Engine, genericHandler *handlers.GenericHTTPHandler, isReady *atomic.Bool) {
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "alive"})
 	})
@@ -25,7 +25,7 @@ func RegisterRoutes(router *gin.Engine, dbHandler *handlers.DBHandler, isReady *
 
 	isReady.Store(true)
 
-	router.GET("/objects/:bucket/:objectID", dbHandler.GetObject)
-	router.PUT("/objects/:bucket/:objectID", dbHandler.PutObject)
-	router.DELETE("/objects/:bucket/:objectID", dbHandler.DeleteObject)
+	router.GET("/objects/:bucket/:objectID", genericHandler.GetObject)
+	router.PUT("/objects/:bucket/:objectID", genericHandler.PutObject)
+	router.DELETE("/objects/:bucket/:objectID", genericHandler.DeleteObject)
 }

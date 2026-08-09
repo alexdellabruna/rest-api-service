@@ -1,9 +1,9 @@
 package handlers
 
-import "database/sql"
+import "task-red-hat/internal/storage"
 
-type DBHandler struct {
-	DB *sql.DB
+type GenericHTTPHandler struct {
+	DBHandler *storage.DBHandler
 }
 
 type ApiRequestGetPutDelete struct {
@@ -19,7 +19,6 @@ type ResponseTemplatePutDelete struct {
 	Bucket   string `json:"bucket"`
 	ObjectID string `json:"objectID"`
 	Message  string `json:"message"`
-	Error    string `json:"error"`
 }
 
 type ResponseTemplateGet struct {

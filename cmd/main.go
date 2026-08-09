@@ -9,6 +9,7 @@ import (
 
 	"task-red-hat/internal/handlers"
 	"task-red-hat/internal/routes"
+	"task-red-hat/internal/storage"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -51,11 +52,11 @@ func main() {
 		panic("HTTP_PORT must be a valid integer")
 	}
 
-	dbHandler := &handlers.DBHandler{DB: db}
+	genericHTTPHandler := &handlers.GenericHTTPHandler{DBHandler: &storage.DBHandler{DB: db}}
 
 	router := gin.Default()
 
-	routes.RegisterRoutes(router, dbHandler, &isReady)
+	routes.RegisterRoutes(router, genericHTTPHandler, &isReady)
 
 	// assuming the server is running on all interfaces
 	router.Run(ipListeningAddress + ":" + httpPort)

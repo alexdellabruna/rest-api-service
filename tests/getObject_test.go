@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"task-red-hat/internal/handlers"
+	"task-red-hat/internal/storage"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,6 @@ func TestGetObject(t *testing.T) {
 					Bucket:   "test-bucket",
 					ObjectID: "verylongID",
 					Message:  "Object retrieved successfully",
-					Error:    "",
 				},
 				Content: "This is a test object content.",
 			},
@@ -55,7 +55,6 @@ func TestGetObject(t *testing.T) {
 					Bucket:   "existing-bucket",
 					ObjectID: "nonexistent-object",
 					Message:  "Object not found",
-					Error:    "Not found",
 				},
 				Content: "",
 			},
@@ -73,7 +72,6 @@ func TestGetObject(t *testing.T) {
 					Bucket:   "non-existing-bucket",
 					ObjectID: "verylongID",
 					Message:  "Object not found",
-					Error:    "Not found",
 				},
 				Content: "",
 			},
@@ -83,7 +81,7 @@ func TestGetObject(t *testing.T) {
 	db := dbConnectAndInit(t)
 	defer db.Close()
 
-	dbHandler := &handlers.DBHandler{DB: db}
+	genericHTTPHandler := &handlers.GenericHTTPHandler{DBHandler: &storage.DBHandler{DB: db}}
 
 	gin.SetMode(gin.TestMode)
 
@@ -120,7 +118,7 @@ func TestGetObject(t *testing.T) {
 				{Key: "objectID", Value: tc.objectID},
 			}
 
-			dbHandler.GetObject(ctx)
+			genericHTTPHandler.GetObject(ctx)
 
 			if w.Code != tc.expectedResponseCode {
 				t.Errorf("Expected status code %d, got %d", tc.expectedResponseCode, w.Code)

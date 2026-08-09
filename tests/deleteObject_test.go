@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"task-red-hat/internal/handlers"
+	"task-red-hat/internal/storage"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -36,7 +37,6 @@ func TestDeleteObject(t *testing.T) {
 				Bucket:   "test-bucket",
 				ObjectID: "verylongID",
 				Message:  "Object deleted successfully",
-				Error:    "",
 			},
 		},
 		{
@@ -51,7 +51,6 @@ func TestDeleteObject(t *testing.T) {
 				Bucket:   "test-bucket",
 				ObjectID: "nonexistent-object-id",
 				Message:  "Object not found",
-				Error:    "",
 			},
 		},
 		{
@@ -66,7 +65,6 @@ func TestDeleteObject(t *testing.T) {
 				Bucket:   "non-existing-bucket",
 				ObjectID: "verylongID",
 				Message:  "Object not found",
-				Error:    "",
 			},
 		},
 	}
@@ -74,7 +72,7 @@ func TestDeleteObject(t *testing.T) {
 	db := dbConnectAndInit(t)
 	defer db.Close()
 
-	dbHandler := &handlers.DBHandler{DB: db}
+	genericHTTPHandler := &handlers.GenericHTTPHandler{DBHandler: &storage.DBHandler{DB: db}}
 
 	gin.SetMode(gin.TestMode)
 
@@ -111,7 +109,7 @@ func TestDeleteObject(t *testing.T) {
 				{Key: "objectID", Value: tc.objectID},
 			}
 
-			dbHandler.DeleteObject(ctx)
+			genericHTTPHandler.DeleteObject(ctx)
 
 			if w.Code != tc.expectedResponseCode {
 				t.Errorf("Expected status code %d, got %d", tc.expectedResponseCode, w.Code)
