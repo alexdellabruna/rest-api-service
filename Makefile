@@ -17,10 +17,10 @@ build-docker:
 	docker build -t $(APP_NAME) .
 
 run:
-	$(GO) run ./cmd
+	LISTENING_ADDRESS=$(LISTENING_ADDRESS) HTTP_PORT=$(PORT) GIN_MODE=release $(GO) run ./cmd
 
 run-docker:
-	docker run -p $(LOCAL_PORT):$(PORT) -e LISTENING_ADDRESS=$(LISTENING_ADDRESS) -e HTTP_PORT=$(PORT) $(APP_NAME) -e GIN_MODE=release
+	docker run -p $(LOCAL_PORT):$(PORT) -e LISTENING_ADDRESS=$(LISTENING_ADDRESS) -e HTTP_PORT=$(PORT) -e GIN_MODE=release $(APP_NAME)
 
 test:
 	$(GO) test -v ./...
