@@ -23,8 +23,8 @@ func main() {
 
 	// using SQLite for local storage
 	// ignore if the directory already exists
-	os.MkdirAll("../db_data", os.ModePerm)
-	db, err := sql.Open("sqlite3", "../db_data/local.db")
+	os.MkdirAll("./db_data", os.ModePerm)
+	db, err := sql.Open("sqlite3", "./db_data/local.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,9 +35,9 @@ func main() {
 	db.Exec("CREATE TABLE IF NOT EXISTS objects (id TEXT PRIMARY KEY, bucket_id TEXT NOT NULL, content TEXT NOT NULL, sha256_hash TEXT NOT NULL, FOREIGN KEY (bucket_id) REFERENCES buckets(id))")
 
 	// get user-specified ip listening address from environment variable
-	ipListeningAddress := os.Getenv("IP_LISTENING_ADDRESS")
-	if ipListeningAddress == "" {
-		ipListeningAddress = "0.0.0.0"
+	listeningAddress := os.Getenv("LISTENING_ADDRESS")
+	if listeningAddress == "" {
+		listeningAddress = "0.0.0.0"
 	}
 
 	httpPort := os.Getenv("HTTP_PORT")
@@ -58,6 +58,5 @@ func main() {
 
 	routes.RegisterRoutes(router, genericHTTPHandler, &isReady)
 
-	// assuming the server is running on all interfaces
-	router.Run(ipListeningAddress + ":" + httpPort)
+	router.Run(listeningAddress + ":" + httpPort)
 }

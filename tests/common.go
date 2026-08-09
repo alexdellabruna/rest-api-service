@@ -9,8 +9,8 @@ import (
 )
 
 func dbConnectAndInit(t *testing.T) *sql.DB {
-	os.MkdirAll("../db_data", os.ModePerm)
-	db, err := sql.Open("sqlite3", "../db_data/local.db")
+	os.MkdirAll("./db_data", os.ModePerm)
+	db, err := sql.Open("sqlite3", "./db_data/local.db")
 	if err != nil {
 		t.Fatalf("Failed to connect to database: %v", err)
 	}
